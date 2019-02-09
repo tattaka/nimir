@@ -32,14 +32,14 @@ proc center_crop(img: Tensor[uint8]; width, height: int): Tensor[uint8] = # 中�
   result = crop(img, x, y, width, height)
 write_png(center_crop(img, 200, 200), "images/lena_center_clop.png")
 
-proc random_crop(img: Tensor[uint8]; width, height: int): Tensor[uint8] = # 中央切り抜き
+proc random_crop(img: Tensor[uint8]; width, height: int): Tensor[uint8] = # ランダム切り抜き
   let
     x = rand(img.shape[2] - width + 1)
     y = rand(img.shape[1] - height + 1)
   result = crop(img, x, y, width, height)
 write_png(random_crop(img, 200, 200), "images/lena_random_clop.png")
 
-proc rot90(img: Tensor[uint8], k: int): Tensor[uint8] =
+proc rot90(img: Tensor[uint8], k: int): Tensor[uint8] = # 90度回転(kは回数)
   case k mod 4:
     of 0:
       result = img
