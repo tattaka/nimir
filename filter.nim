@@ -8,12 +8,11 @@ proc add_noise*(img: Tensor[uint8]): Tensor[uint8]=
   var
     noise: seq[float]
     noise_img: Tensor[float]
-  result = ones[uint8]([img.shape[0], img.shape[1], img.shape[2]])
+  result = newTensor[uint8]([img.shape[0], img.shape[1], img.shape[2]])
   randomize()
   for i in 0..<img.shape[0]*img.shape[1]*img.shape[2]:
     noise.add(rand(1.0))
   noise_img = noise.toTensor().reshape(img.shape[0], img.shape[1], img.shape[2])
-  # noise_img = noise_img / noise_img.sum
   for c in 0..<img.shape[0]:
     for h in 0..<img.shape[1]:
       for w in 0..<img.shape[2]:
