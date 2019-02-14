@@ -4,7 +4,7 @@ import arraymancer
 var
   img = read_image("images/lena.png") # Read image
 
-proc correlation*(img: Tensor[uint8], kernel: Tensor[int], stride = 1, padding = 0): Tensor[uint8] =
+proc correlation*(img: Tensor[uint8], kernel: Tensor[float], stride = 1, padding = 0): Tensor[uint8] =
   assert(kernel.shape.len == 2)
   assert(kernel.shape[0] mod 2 == 1)
   assert(kernel.shape[1] mod 2 == 1)
@@ -16,7 +16,6 @@ proc correlation*(img: Tensor[uint8], kernel: Tensor[int], stride = 1, padding =
     i_h = img.shape[1]
     k_w = kernel.shape[1]
     k_h = kernel.shape[0]
-    kernel_sum = kernel.sum
     output_w = (i_w + 2*padding - k_w) div stride + 1
     output_h = (i_h + 2*padding - k_h) div stride + 1
   var
@@ -34,15 +33,32 @@ proc correlation*(img: Tensor[uint8], kernel: Tensor[int], stride = 1, padding =
   for c in 0..<result.shape[0]:
     for i in 0..<result.shape[1]:
       for j in 0..<result.shape[2]:
-        var I_xy = 0
+        var I_xy = 0.0
         for x in 0..<k_h:
           for y in 0..<k_w:
-            inc(I_xy, kernel[x, y] * int(img[c, i*stride+x, j*stride+y]))
-        result[c, i, j] = uint8(I_xy div (kernel_sum))
+            I_xy = I_xy + kernel[x, y] * float(img[c, i*stride+x, j*stride+y])
+        result[c, i, j] = uint8(I_xy)
+
 
 proc smoothing*(img: Tensor[uint8], ksize = 3, stride = 1, padding = 0): Tensor[uint8] =
   var
-    kernel = ones[int]([ksize, ksize])
+    kernel = ones[float]([ksize, ksize]) / 9
   echo kernel
-  result = correlation(img, kernel)
+  result = correlation(img, kernel, stride, padding)
+
 write_png(smoothing(img), "images/lena_smooth.png")
+
+proc gaussian*(img: Tensor[uint8], ksize = 3, stride = 1, padding = 0, scale = 1.0): Tensor[uint8] =
+  var
+    kernel = newTensor[float](ksize, ksize)
+  for i in 0..<ksize:
+    for j in 0..<ksize:
+      var
+        x = i - ksize div 2
+        y = j - ksize div 2
+      kernel[i, j] = exp(-float(x^2+y^2)/(2*(scale^2))) / (2*PI*(scale^2))
+  kernel = kernel / kernel.sum
+  echo kernel
+  result = correlation(img, kernel, stride, padding)
+
+write_png(gaussian(img, ksize = 5, scale = 5.0), "images/lena_gaussian.png")
