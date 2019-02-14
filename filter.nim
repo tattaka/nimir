@@ -4,6 +4,24 @@ import arraymancer
 var
   img = read_image("images/lena.png") # Read image
 
+proc add_noise*(img: Tensor[uint8]): Tensor[uint8]=
+  var
+    noise: seq[float]
+    noise_img: Tensor[float]
+  result = ones[uint8]([img.shape[0], img.shape[1], img.shape[2]])
+  randomize()
+  for i in 0..<img.shape[0]*img.shape[1]*img.shape[2]:
+    noise.add(rand(1.0))
+  noise_img = noise.toTensor().reshape(img.shape[0], img.shape[1], img.shape[2])
+  # noise_img = noise_img / noise_img.sum
+  for c in 0..<img.shape[0]:
+    for h in 0..<img.shape[1]:
+      for w in 0..<img.shape[2]:
+        result[c, h, w] = uint8(noise_img[c, h, w] * float(img[c, h, w]))
+  return result
+var noise_img = add_noise(img)
+write_png(noise_img, "images/lena_noise.png")
+
 proc correlation*(img: Tensor[uint8], kernel: Tensor[float], stride = 1, padding = 0): Tensor[uint8] =
   assert(kernel.shape.len == 2)
   assert(kernel.shape[0] mod 2 == 1)
@@ -61,4 +79,4 @@ proc gaussian*(img: Tensor[uint8], ksize = 3, stride = 1, padding = 0, scale = 1
   echo kernel
   result = correlation(img, kernel, stride, padding)
 
-write_png(gaussian(img, ksize = 5, scale = 5.0), "images/lena_gaussian.png")
+write_png(gaussian(noise_img, ksize = 11, scale = 5.0), "images/lena_gaussian.png")
