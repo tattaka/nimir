@@ -124,7 +124,10 @@ proc bilateral*(img: Tensor[uint8], ksize = 3, stride = 1, padding = 0, scale_d 
       for j in 0..<result.shape[2]:
         for x in 0..<k_h:
           for y in 0..<k_w:
-            kernel[x, y] = exp(-float(x^2+y^2)/(2*(scale_d^2)) - sqrt(float((img[c, i*stride+(k_h div 2), j*stride+(k_w div 2)]^2)-(img[c, i*stride+x, j*stride+y]^2)))/(2*(scale_r^2)))
+            var
+              w = x - ksize div 2
+              h = y - ksize div 2
+            kernel[x, y] = exp(-float(w^2+h^2)/(2*(scale_d^2)) - sqrt(float((img[c, i*stride+(k_h div 2), j*stride+(k_w div 2)]^2)-(img[c, i*stride+x, j*stride+y]^2)))/(2*(scale_r^2)))
         var I_xy = 0.0
         kernel = kernel / kernel.sum
         for x in 0..<k_h:
@@ -216,5 +219,32 @@ proc sobel*(img: Tensor[uint8], stride = 1, padding = 0): Tensor[uint8] =
 
 proc canny_edge*(img: Tensor[uint8], stride = 1, padding = 0): Tensor[uint8] =
   result = sobel(gaussian(img, ksize = 5, scale = 3.0))
-
 # write_png(canny_edge(gray_img), "images/lena_canny_edge.png")
+
+proc LoG*(img: Tensor[uint8], ksize = 3, stride = 1, padding = 0, scale = 3.0): Tensor[uint8] =
+  let
+    stride = stride
+    padding = padding
+  var
+    img = img
+    i_w = img.shape[2]
+    i_h = img.shape[1]
+    pad_img = zeros[uint8]([img.shape[0], i_h+2*padding, i_w+2*padding])
+    kernel = newTensor[float](ksize, ksize)
+    k_w = 3
+    k_h = 3
+    output_w = (i_w + 2*padding - k_w) div stride + 1
+    output_h = (i_h + 2*padding - k_h) div stride + 1
+    temp = 0.0
+  for i in 0..<ksize:
+    for j in 0..<ksize:
+      var
+        x = i - ksize div 2
+        y = j - ksize div 2
+      kernel[i, j] = (-1/(PI*(scale^4)))*(1-(float(x^2 + y^2)/(2*(scale^2))))*exp(-float(x^2+y^2)/(2*(scale^2)))
+      temp = temp + kernel[i, j]^2
+  kernel = kernel.map(x => (x - kernel.mean)/sqrt((temp/float(ksize^2))))
+  echo kernel
+  result = correlation(img, kernel, stride, padding)
+
+# write_png(LoG(gray_img, scale = 12, ksize=5), "images/lena_laplacian_of_gaussian.png")
