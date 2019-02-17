@@ -30,8 +30,10 @@ proc add_noise*(img: Tensor[uint8]): Tensor[uint8]=
       for w in 0..<img.shape[2]:
         result[c, h, w] = uint8(noise_img[c, h, w] * float(img[c, h, w]))
   return result
+
 var noise_img = add_noise(img)
-write_png(noise_img, "images/lena_noise.png")
+
+# write_png(noise_img, "images/lena_noise.png")
 
 proc correlation*(img: Tensor[uint8], kernel: Tensor[float], stride = 1, padding = 0): Tensor[uint8] =
   assert(kernel.shape.len == 2)
@@ -75,7 +77,7 @@ proc smoothing*(img: Tensor[uint8], ksize = 3, stride = 1, padding = 0): Tensor[
   echo kernel
   result = correlation(img, kernel, stride, padding)
 
-write_png(smoothing(img), "images/lena_smooth.png")
+# write_png(smoothing(img), "images/lena_smooth.png")
 
 proc gaussian*(img: Tensor[uint8], ksize = 3, stride = 1, padding = 0, scale = 1.0): Tensor[uint8] =
   var
@@ -90,7 +92,7 @@ proc gaussian*(img: Tensor[uint8], ksize = 3, stride = 1, padding = 0, scale = 1
   echo kernel
   result = correlation(img, kernel, stride, padding)
 
-write_png(gaussian(noise_img, ksize = 11, scale = 3.0), "images/lena_gaussian.png")
+# write_png(gaussian(noise_img, ksize = 11, scale = 3.0), "images/lena_gaussian.png")
 
 proc bilateral*(img: Tensor[uint8], ksize = 3, stride = 1, padding = 0, scale_d = 1.0, scale_r = 1.0): Tensor[uint8] =
   assert(ksize mod 2 == 1)
@@ -130,7 +132,7 @@ proc bilateral*(img: Tensor[uint8], ksize = 3, stride = 1, padding = 0, scale_d 
             I_xy = I_xy + kernel[x, y] * float(img[c, i*stride+x, j*stride+y])
         result[c, i, j] = uint8(I_xy)
 
-write_png(bilateral(noise_img, ksize = 11, scale_r = 3.0, scale_d = 1.0), "images/lena_bilateral.png")
+# write_png(bilateral(noise_img, ksize = 11, scale_r = 3.0, scale_d = 1.0), "images/lena_bilateral.png")
 
 proc prewitt*(img: Tensor[uint8], stride = 1, padding = 0): Tensor[uint8] =
   let
@@ -170,4 +172,4 @@ proc prewitt*(img: Tensor[uint8], stride = 1, padding = 0): Tensor[uint8] =
             I_y = I_y + kernel_y[x, y] * float(img[c, i*stride+x, j*stride+y])
         result[c, i, j] = uint8(sqrt(I_x^2 + I_y^2))
 
-write_png(prewitt(gray_img), "images/lena_prewitt.png")
+# write_png(prewitt(gray_img), "images/lena_prewitt.png")
