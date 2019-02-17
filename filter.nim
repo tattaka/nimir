@@ -173,3 +173,48 @@ proc prewitt*(img: Tensor[uint8], stride = 1, padding = 0): Tensor[uint8] =
         result[c, i, j] = uint8(sqrt(I_x^2 + I_y^2))
 
 # write_png(prewitt(gray_img), "images/lena_prewitt.png")
+
+proc sobel*(img: Tensor[uint8], stride = 1, padding = 0): Tensor[uint8] =
+  let
+    stride = stride
+    padding = padding
+    i_w = img.shape[2]
+    i_h = img.shape[1]
+  var
+    img = img
+    pad_img = zeros[uint8]([img.shape[0], i_h+2*padding, i_w+2*padding])
+    kernel_x = newTensor[float](3, 3)
+    kernel_y = newTensor[float](3, 3)
+    k_w = 3
+    k_h = 3
+    output_w = (i_w + 2*padding - k_w) div stride + 1
+    output_h = (i_h + 2*padding - k_h) div stride + 1
+
+  kernel_x = @[@[-1, 0, 1], @[-2, 0, 2], @[-1, 0, 1]].toTensor.astype(float)
+  kernel_y = @[@[-1, -2, -1], @[0, 0, 0], @[1, 2, 1]].toTensor.astype(float)
+  result = newTensor[uint8]([img.shape[0], output_h, output_w])
+
+  for c in 0..<img.shape[0]:
+    for i in 0..<i_h:
+      for j in 0..<i_w:
+        pad_img[c, i+padding, j+padding] = img[c, i, j]
+
+  img = pad_img
+  for c in 0..<result.shape[0]:
+    for i in 0..<result.shape[1]:
+      for j in 0..<result.shape[2]:
+        var
+          I_x = 0.0
+          I_y = 0.0
+        for x in 0..<k_h:
+          for y in 0..<k_w:
+            I_x = I_x + kernel_x[x, y] * float(img[c, i*stride+x, j*stride+y])
+            I_y = I_y + kernel_y[x, y] * float(img[c, i*stride+x, j*stride+y])
+        result[c, i, j] = uint8(sqrt(I_x^2 + I_y^2))
+
+# write_png(sobel(gray_img), "images/lena_sobel.png")
+
+proc canny_edge*(img: Tensor[uint8], stride = 1, padding = 0): Tensor[uint8] =
+  result = sobel(gaussian(img, ksize = 5, scale = 3.0))
+
+# write_png(canny_edge(gray_img), "images/lena_canny_edge.png")
